@@ -1,28 +1,26 @@
 from django.db import models
 
 # данные объявления
-class Announcement(models.Model):
-    # обязательная информация
+class Ads(models.Model):
+    # поля которые будут использоваться для фильтрации
     address = models.CharField(max_length=100)
 
-    data_stay  = models.DateField(blank=True)
-    data_leave = models.DateField(blank=True)
-
-    member_adults = models.IntegerField()
-    number_kids = models.IntegerField()
+    number_people = models.IntegerField() # количество гостей
+    number_beds_one = models.IntegerField() # количество одноместных кроватей
+    number_beds_two = models.IntegerField() # количество двуместных кроватей
     animal_check = models.BooleanField()
 
     price = models.IntegerField()
+    square_info = models.IntegerField()
+    type_housing = models.CharField(max_length=100)
 
+    # поля с описанием и подобное
+    time_stay  = models.CharField(max_length=100)
+    time_leave = models.CharField(max_length=100)
     short_desc = models.CharField(max_length=100)
     description = models.TextField()
     
-    # разобраться с соединением таблиц в моделях
+    # owner для указания ключа на владельца объявления
+    # и ссылка на изображение, для которых потом надо реализовать media
     owner = models.IntegerField()
-
-    # необязательная информация
-    number_beds = models.IntegerField()
-    type_housing = models.CharField(max_length=100)
-    square_info = models.IntegerField()
-    metro_info = models.CharField(max_length=100)
     img_src = models.CharField(max_length=100)
