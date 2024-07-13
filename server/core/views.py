@@ -1,15 +1,20 @@
 from rest_framework.viewsets import ModelViewSet
-from django_filters import rest_framework as filters
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import Ads
 from .serializers import AdsDetailSerializer, AdsListSerializer
 from .filters import AdsFilter
 
-
 class AdsView(ModelViewSet):
     queryset = Ads.objects.all()
     serializer_class = AdsDetailSerializer
-    filter_backends = (filters.DjangoFilterBackend,)
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = AdsFilter
 
     def get_serializer_class(self):
