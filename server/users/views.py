@@ -1,36 +1,64 @@
-from rest_framework import generics, status, views, permissions
-from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-from .serializers import RegisterSerializer,LoginSerializer,LogoutSerializer
+import json
+from django.contrib.auth import authenticate, login, logout
+from django.http import JsonResponse
+from django.middleware.csrf import get_token
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_POST
+from django.contrib.sessions.models import Session
 
 
-class RegisterView(generics.GenericAPIView):
-    serializer_class = RegisterSerializer
-
-    def post(self,request):
-        user = request.data
-        serializer = self.serializer_class(data=user)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        user_data = serializer.data
-        return Response(user_data, status=status.HTTP_201_CREATED)
+# костыльный декоратор для перенаправления ошибки на клиент
+def json_login_required(view_func):
+    def wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Вы не авторизованы'}, status=401)
+        return view_func(request, *args, **kwargs)
+    return wrapped_view
 
 
-class LoginAPIView(generics.GenericAPIView):
-    serializer_class = LoginSerializer
-
-    def post(self,request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.data,status=status.HTTP_200_OK)
+def get_csrf(request):
+    response = JsonResponse({'detail': 'CSRF cookie set'})
+    response['X-CSRFToken'] = get_token(request)
+    return response
 
 
-class LogoutAPIView(generics.GenericAPIView):
-    serializer_class = LogoutSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+@require_POST
+def login_view(request):
+    data = json.loads(request.body)
+    username = data.get('username')
+    password = data.get('password')
 
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    if username is None or password is None:
+        return JsonResponse({'detail': 'Пожалуйста предоставьте логин и пароль'}, status=400)
+
+    user = authenticate(username=username, password=password)
+    
+    if user is None:
+        return JsonResponse({'detail': 'Неверные данные'}, status=400)
+
+    login(request, user)
+    return JsonResponse({'detail': 'Успешная авторизация'})
+
+  
+@json_login_required
+def logout_view(request):
+    logout(request)
+    return JsonResponse({'detail': 'Вы успешно вышли'})
+
+  
+# Узнать авторизован ли пользователь и получить его данные
+@ensure_csrf_cookie # <- Принудительная отправка CSRF cookie
+def session_view(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'isAuthenticated': False})
+    return JsonResponse({
+        'isAuthenticated': True,
+        'username': request.user.username,
+        'user_id': request.user.id
+    })
+
+  
+@json_login_required
+def user_info(request):
+    return JsonResponse({'username': request.user.username})
+  
