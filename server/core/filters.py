@@ -1,9 +1,10 @@
 import django_filters
-from . models import Ads
+from . models import Ad
 
-class AdsFilter(django_filters.FilterSet):
+class AdFilter(django_filters.FilterSet):
     price = django_filters.RangeFilter(field_name='price')
+    address = django_filters.CharFilter(field_name='address')
 
     class Meta:
-        model = Ads
+        model = Ad
         fields = []
