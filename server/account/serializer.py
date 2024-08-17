@@ -1,8 +1,9 @@
 from rest_framework import  serializers
-from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User
-from core.models import Ad, Reservation, Review, Favorite, BrowsingHistory
+from core.models import Ad, Reservation, Review, Favorite, BrowsingHistory, PaymentReceipt
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from core.serializers import AdDetailSerializer
+from .models import Profile
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -46,23 +47,30 @@ class LogoutSerializer(serializers.Serializer):
 class AdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ad
-        exclude = ['owner', 'id']
+        exclude = ['owner']
 
 class AdForReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ad
         fields = ['id', 'address']
 
-class ReservationSerializer(serializers.ModelSerializer):
-    ad = AdForReservationSerializer(read_only=True)
-
-    class Meta:
-        model = Reservation
-        fields = ['id', 'begin_lease', 'end_lease', 'ad', 'lease_end_status']
-
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
+        fields = '__all__'
+
+class PaymentReceiptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentReceipt
+        fields = '__all__'
+
+class ReservationSerializer(serializers.ModelSerializer):
+    ad = AdForReservationSerializer(read_only=True)
+    review = ReviewSerializer(read_only=True)
+    paymentreceipt = PaymentReceiptSerializer(read_only=True)
+
+    class Meta:
+        model = Reservation
         fields = '__all__'
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -75,37 +83,28 @@ class FavoriteSerializer(serializers.ModelSerializer):
 #         model: BrowsingHistory
 #         fields = '__all__'
 
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = '__all__'
+
 class UserSerializer(serializers.ModelSerializer):
-    owned_ads = AdSerializer(read_only=True, many=True)
+    profile = ProfileSerializer()
+    owned_ads = AdDetailSerializer(read_only=True, many=True)
     owned_reservations = ReservationSerializer(read_only=True, many=True)
-    owned_reviews = ReviewSerializer(read_only=True, many=True)
     owned_favorites = FavoriteSerializer(read_only=True, many=True)
+    owned_reviews = ReviewSerializer(read_only=True, many=True)
 
     class Meta:
         model = User
         fields = [
             'id',
             'username',
-            'first_name',
-            'last_name',
-            'email',
+            'profile',
             'groups',
             'owned_ads',
-            'owned_reservations',
             'owned_reviews',
+            'owned_reservations',
             'owned_favorites',
         ]
 
-class ProfileSerializer(serializers.ModelSerializer):
-    owned_ads = serializers.StringRelatedField(read_only=True, many=True)
-
-    class Meta:
-        model = User
-        fields = [
-            'id',
-            'first_name',
-            'last_name',
-            'email',
-            'owned_ads',
-            'owned_reviews',
-        ]

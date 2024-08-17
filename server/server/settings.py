@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'core',
     'account',
+    'simple_two_fact',
     'django_filters',
 ]
 

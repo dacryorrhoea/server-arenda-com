@@ -3,8 +3,11 @@ from django.contrib.auth.models import User
 
 
 class Ad(models.Model):
+    cash_back = models.IntegerField()
+    fast_booking = models.BooleanField(default=True)
+    long_term = models.BooleanField(default=True)
+
     description = models.TextField()
-    img_src = models.CharField(max_length=300)
     clock_entry = models.CharField(max_length=100)
     clock_leave = models.CharField(max_length=100)
     min_length_of_stay = models.IntegerField()
@@ -30,7 +33,11 @@ class Ad(models.Model):
     beds_info = models.CharField(max_length=200)
     type_flats = models.CharField(max_length=200)
     short_desc = models.TextField()
+
     address = models.CharField(max_length=200)
+    address_lat = models.CharField(max_length=200)
+    address_lon = models.CharField(max_length=200)
+
     price = models.IntegerField()
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_ads')
 
@@ -41,8 +48,9 @@ class Ad(models.Model):
 class Reservation(models.Model):
     begin_lease = models.DateField()
     end_lease = models.DateField()
+    count_people = models.IntegerField()
 
-    approve_status = models.BooleanField(default=True)
+    approve_status = models.BooleanField(default=False)
     lease_end_status = models.BooleanField(default=False)
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_reservations')
@@ -90,4 +98,19 @@ class BrowsingHistory(models.Model):
 
     def __str__(self):
         return f'История посещений пользователя: {self.owner}'
+    
+class PaymentReceipt(models.Model):
+    sum = models.IntegerField()
+    reservation = models.OneToOneField(Reservation, on_delete = models.CASCADE, primary_key = True)
+
+    def __str__(self):
+        return f'Чек оплаты брони №{self.reservation}'
+    
+
+class Image(models.Model):
+    src = models.CharField()
+    ad = models.ForeignKey(Ad, on_delete=models.CASCADE, related_name='images')
+
+    def __str__(self):
+        return f'image №{self.id}'
 
